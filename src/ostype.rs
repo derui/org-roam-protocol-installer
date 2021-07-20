@@ -1,7 +1,20 @@
+use std::fmt::Display;
+
 #[derive(Debug, Eq)]
 pub enum OsType {
     Linux,
     Mac,
+}
+
+impl Display for OsType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let str = match self {
+            OsType::Linux => "Linux",
+            OsType::Mac => "Mac",
+        };
+
+        write!(f, "{}", str)
+    }
 }
 
 impl PartialEq for OsType {

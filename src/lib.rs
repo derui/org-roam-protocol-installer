@@ -1,64 +1,71 @@
+use std::error::Error;
+
+use config::Config;
+
+pub mod config;
 pub mod ostype;
 
-#[derive(Debug, Eq)]
-pub struct Config {
-    target_os: ostype::OsType,
+pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
+    let installer = match config.target_os {
+        ostype::OsType::Linux => Box::new(linux::new_installer()),
+        _ => panic!(format!("not implemented for {}", config.target_os)),
+    };
+
+    installer.install()
 }
 
-impl Config {
-    pub fn new(args: &[String]) -> Result<Config, &'static str> {
-        let target_os = ostype::OsType::from_string(&args[1]);
+type InstallerResult<T> = Result<T, Box<dyn Error>>;
 
-        return match target_os {
-            Some(v) => Ok(Config { target_os: v }),
-            None => Err("Can not detect OS type"),
-        };
+pub trait RoamProtocolInstaller {
+    fn install(&self) -> InstallerResult<()>;
+}
+
+mod linux {
+    use std::io::Write;
+    use std::{fs::File, io::ErrorKind};
+
+    use super::InstallerResult;
+    use super::RoamProtocolInstaller;
+
+    const USER_DESKTOP_FILE: &'static str = "~/.local/share/applications/org-protocol.desktop";
+    const DESKTOP_FILE_CONTENT: &'static str = r#"
+[Desktop Entry]
+Name=Org-Protocol
+Exec=emacsclient %u
+Icon=emacs-icon
+Type=Application
+Terminal=false
+MimeType=x-scheme-handler/org-protocol
+"#;
+
+    pub fn new_installer() -> Box<dyn RoamProtocolInstaller> {
+        Box::new(LinuxRoamProtocolInstaller::new())
     }
-}
 
-impl PartialEq for Config {
-    fn eq(&self, other: &Self) -> bool {
-        if self.target_os == other.target_os {
-            return true;
-        } else {
-            return false;
-        }
-    }
-}
-
-mod test {
-    #[cfg(test)]
-    mod config {
-        use crate::ostype;
-        use crate::Config;
-
-        #[test]
-        fn get_valid_config() {
-            // arrange
-            let args = vec![String::from(""), String::from("linux")];
-
-            // do
-            let actual = Config::new(&args);
-
-            // verify
-            assert_eq!(
-                actual,
-                Ok(Config {
-                    target_os: ostype::OsType::Linux
-                })
-            )
+    struct LinuxRoamProtocolInstaller {}
+    impl LinuxRoamProtocolInstaller {
+        pub fn new() -> Self {
+            LinuxRoamProtocolInstaller {}
         }
 
-        #[test]
-        fn get_error_if_invalid_os() {
-            // arrange
-            let args = vec![String::from(""), String::from("invalid")];
+        fn open_desktop_file<'a>(&self) -> InstallerResult<File> {
+            let f = match File::open(USER_DESKTOP_FILE) {
+                Ok(file) => file,
+                Err(error) if error.kind() == ErrorKind::NotFound => {
+                    File::create(self::USER_DESKTOP_FILE)?
+                }
+                Err(e) => Err(e)?,
+            };
+            Ok(f)
+        }
+    }
 
-            // do
-            let actual = Config::new(&args);
+    impl RoamProtocolInstaller for LinuxRoamProtocolInstaller {
+        fn install(&self) -> InstallerResult<()> {
+            let mut f: File = self.open_desktop_file()?;
 
-            // verify
-            assert_eq!(actual, Err("Can not detect OS type"))
+            f.write(DESKTOP_FILE_CONTENT.as_bytes())?;
+            Ok(())
         }
     }
 }
