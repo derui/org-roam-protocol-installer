@@ -8,7 +8,7 @@ pub mod ostype;
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     let installer = match config.target_os {
         ostype::OsType::Linux => Box::new(linux::new_installer()),
-        _ => panic!(format!("not implemented for {}", config.target_os)),
+        _ => panic!("not implemented for {}", config.target_os),
     };
 
     installer.install()
@@ -22,6 +22,7 @@ pub trait RoamProtocolInstaller {
 
 mod linux {
     use std::io::Write;
+    use std::process;
     use std::{fs::File, io::ErrorKind};
 
     use super::InstallerResult;
@@ -58,6 +59,17 @@ MimeType=x-scheme-handler/org-protocol
             };
             Ok(f)
         }
+
+        fn install_mime_for_xdg(&self) {
+            process::Command::new("xdg-mime")
+                .args(&[
+                    "default",
+                    "org-protocol.desktop",
+                    "x-scheme-handler/org-protocol",
+                ])
+                .output()
+                .expect("Can not execute xdg-mime");
+        }
     }
 
     impl RoamProtocolInstaller for LinuxRoamProtocolInstaller {
@@ -65,6 +77,7 @@ MimeType=x-scheme-handler/org-protocol
             let mut f: File = self.open_desktop_file()?;
 
             f.write(DESKTOP_FILE_CONTENT.as_bytes())?;
+            self.install_mime_for_xdg();
             Ok(())
         }
     }
