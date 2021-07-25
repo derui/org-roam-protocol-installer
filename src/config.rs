@@ -1,9 +1,8 @@
-use std::{
-    fmt::{Debug, Display},
-    path::PathBuf,
-};
+use std::fmt::{Debug, Display};
+use std::path::PathBuf;
 
 use clap::{App, Arg, ArgMatches, SubCommand};
+use dirs::home_dir;
 
 #[derive(Debug, Eq)]
 pub struct Config {
@@ -17,8 +16,8 @@ pub fn get_app<'a, 'b>() -> App<'a, 'b> {
             .arg(
                 Arg::with_name("desktop-entry-directory")
                     .short("d")
-                    .default_value("~/.local/share/applications")
-                    .help("A directory to save desktop entry"),
+                    .default_value("")
+                    .help("A full path of directory to save desktop entry"),
             )
             .arg(
                 Arg::with_name("desktop-file-name")
@@ -68,11 +67,18 @@ impl Display for LinuxConfig {
 impl Config {
     pub fn new(matches: &ArgMatches) -> Result<Config, &'static str> {
         return if let Some(matches) = matches.subcommand_matches("linux") {
+            let mut home = home_dir().unwrap();
+            let desktop_entry_dir = match matches.value_of("desktop-entry-directory") {
+                Some(str) if str.len() > 0 => PathBuf::from(str),
+                Some(_) | None => {
+                    home.push(".local/share/applications");
+                    home
+                }
+            };
+
             Ok(Config {
                 linux_config: Some(LinuxConfig {
-                    desktop_entry_directory: PathBuf::from(
-                        matches.value_of("desktop-entry-directory").unwrap(),
-                    ),
+                    desktop_entry_directory: desktop_entry_dir,
                     desktop_file_name: String::from(matches.value_of("desktop-file-name").unwrap()),
                 }),
             })
@@ -118,11 +124,14 @@ mod test {
             let actual = Config::new(&matches);
 
             // verify
+            let mut home = dirs::home_dir().unwrap();
+            home.push(".local/share/applications");
+
             assert_eq!(
                 actual,
                 Ok(Config {
                     linux_config: Some(LinuxConfig {
-                        desktop_entry_directory: PathBuf::from("~/.local/share/applications"),
+                        desktop_entry_directory: home,
                         desktop_file_name: String::from("org-protocol.desktop")
                     })
                 })
