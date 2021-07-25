@@ -19,9 +19,9 @@ pub trait RoamProtocolInstaller {
 }
 
 mod linux_installer {
+    use std::fs::File;
     use std::io::Write;
     use std::process;
-    use std::{fs::File, io::ErrorKind};
 
     use crate::config::LinuxConfig;
 
@@ -53,13 +53,7 @@ MimeType=x-scheme-handler/org-protocol
         fn open_desktop_file<'a>(&self) -> InstallerResult<File> {
             let desktop_file_path = self.config.get_desktop_file_path().unwrap_or(String::new());
 
-            let f = match File::open(&desktop_file_path) {
-                Ok(file) => file,
-                Err(error) if error.kind() == ErrorKind::NotFound => {
-                    File::create(&desktop_file_path)?
-                }
-                Err(e) => Err(e)?,
-            };
+            let f = File::create(&desktop_file_path)?;
             Ok(f)
         }
 
@@ -77,9 +71,12 @@ MimeType=x-scheme-handler/org-protocol
 
     impl RoamProtocolInstaller for LinuxRoamProtocolInstaller {
         fn install(&self) -> InstallerResult<()> {
+            println!("Install desktop file...");
             let mut f: File = self.open_desktop_file()?;
 
             f.write(DESKTOP_FILE_CONTENT.as_bytes())?;
+
+            println!("Install xdg-mime to this environment...");
             self.install_mime_for_xdg();
             Ok(())
         }
