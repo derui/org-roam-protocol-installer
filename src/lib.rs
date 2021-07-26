@@ -5,8 +5,15 @@ use config::Config;
 pub mod config;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
-    if let Some(config) = config.linux_config {
-        return linux_installer::new(config).install();
+    return if let Some(config) = config.linux_config {
+        linux_installer::new(config).install()?;
+
+        println!("Installation process finished successfully.\n");
+        println!("You should do something to use org-roam-protocol");
+        println!("  1: Enable org-roam-protocol in your Emacs's init file.");
+        println!("    (require 'org-roam-protocol)");
+        println!("  2: Create the bookmarklet in your browser written at https://www.orgroam.com/manual.html#The-roam_002dref-protocol");
+        Ok(())
     } else {
         panic!("not implemented");
     };
