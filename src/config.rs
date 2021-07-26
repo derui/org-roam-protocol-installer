@@ -4,7 +4,9 @@ use std::path::PathBuf;
 use clap::{App, Arg, ArgMatches, SubCommand};
 use dirs::home_dir;
 
-#[derive(Debug, Eq)]
+use crate::execution_mode::ExecutionMode;
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct Config {
     pub linux_config: Option<LinuxConfig>,
 }
@@ -20,6 +22,12 @@ pub fn get_app<'a, 'b>() -> App<'a, 'b> {
                     .help("A full path of directory to save desktop entry"),
             )
             .arg(
+                Arg::with_name("mode")
+                    .default_value("install")
+                    .possible_values(&["install", "uninstall"])
+                    .help("A full path of directory to save desktop entry"),
+            )
+            .arg(
                 Arg::with_name("desktop-file-name")
                     .short("f")
                     .default_value("org-protocol.desktop")
@@ -28,10 +36,11 @@ pub fn get_app<'a, 'b>() -> App<'a, 'b> {
     );
 }
 
-#[derive(Debug, Eq)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct LinuxConfig {
     pub desktop_entry_directory: PathBuf,
     pub desktop_file_name: String,
+    pub mode: ExecutionMode,
 }
 
 impl LinuxConfig {
@@ -75,9 +84,12 @@ impl Config {
                     home
                 }
             };
+            let mode = ExecutionMode::from(matches.value_of("mode").unwrap())
+                .unwrap_or(ExecutionMode::Install);
 
             Ok(Config {
                 linux_config: Some(LinuxConfig {
+                    mode,
                     desktop_entry_directory: desktop_entry_dir,
                     desktop_file_name: String::from(matches.value_of("desktop-file-name").unwrap()),
                 }),
@@ -85,25 +97,6 @@ impl Config {
         } else {
             Err("Can not detect OS type")
         };
-    }
-}
-
-impl PartialEq for Config {
-    fn eq(&self, other: &Self) -> bool {
-        if self.linux_config == other.linux_config {
-            return true;
-        } else {
-            return false;
-        }
-    }
-}
-
-impl PartialEq for LinuxConfig {
-    fn eq(&self, other: &Self) -> bool {
-        let same_desktop_entry_directory =
-            self.desktop_entry_directory == other.desktop_entry_directory;
-        let same_desktop_file_name = self.desktop_file_name == other.desktop_file_name;
-        return same_desktop_entry_directory && same_desktop_file_name;
     }
 }
 
@@ -131,6 +124,7 @@ mod test {
                 actual,
                 Ok(Config {
                     linux_config: Some(LinuxConfig {
+                        mode: crate::execution_mode::ExecutionMode::Install,
                         desktop_entry_directory: home,
                         desktop_file_name: String::from("org-protocol.desktop")
                     })
@@ -147,6 +141,7 @@ mod test {
             fn get_desktop_file() {
                 // arrange
                 let config = LinuxConfig {
+                    mode: crate::execution_mode::ExecutionMode::Install,
                     desktop_entry_directory: PathBuf::from("directory"),
                     desktop_file_name: String::from("file.desktop"),
                 };
@@ -182,6 +177,7 @@ mod test {
                 actual,
                 Ok(Config {
                     linux_config: Some(LinuxConfig {
+                        mode: crate::execution_mode::ExecutionMode::Install,
                         desktop_entry_directory: PathBuf::from("directory"),
                         desktop_file_name: String::from("file.desktop")
                     })

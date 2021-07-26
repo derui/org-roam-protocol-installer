@@ -3,16 +3,25 @@ use std::error::Error;
 use config::Config;
 
 pub mod config;
+pub mod execution_mode;
 
 pub fn run(config: Config) -> Result<(), Box<dyn Error>> {
     return if let Some(config) = config.linux_config {
-        linux_installer::new(config).install()?;
+        match config.mode {
+            execution_mode::ExecutionMode::Install => {
+                linux_installer::new(config).install()?;
+                println!("Installation process finished successfully.\n");
+                println!("You should do something to use org-roam-protocol");
+                println!("  1: Enable org-roam-protocol in your Emacs's init file.");
+                println!("    (require 'org-roam-protocol)");
+                println!("  2: Create the bookmarklet in your browser written at https://www.orgroam.com/manual.html#The-roam_002dref-protocol");
+            }
+            execution_mode::ExecutionMode::Uninstall => {
+                linux_installer::new(config).uninstall()?;
+                println!("Uninstall process finished successfully");
+            }
+        }
 
-        println!("Installation process finished successfully.\n");
-        println!("You should do something to use org-roam-protocol");
-        println!("  1: Enable org-roam-protocol in your Emacs's init file.");
-        println!("    (require 'org-roam-protocol)");
-        println!("  2: Create the bookmarklet in your browser written at https://www.orgroam.com/manual.html#The-roam_002dref-protocol");
         Ok(())
     } else {
         panic!("not implemented");
@@ -23,11 +32,14 @@ type InstallerResult<T> = Result<T, Box<dyn Error>>;
 
 pub trait RoamProtocolInstaller {
     fn install(&self) -> InstallerResult<()>;
+    fn uninstall(&self) -> InstallerResult<()>;
 }
 
 mod linux_installer {
+    use std::fs::remove_file;
     use std::fs::File;
     use std::io::Write;
+    use std::path::PathBuf;
     use std::process;
 
     use crate::config::LinuxConfig;
@@ -57,8 +69,12 @@ MimeType=x-scheme-handler/org-protocol
             LinuxRoamProtocolInstaller { config }
         }
 
+        fn get_desktop_file_path(&self) -> String {
+            return self.config.get_desktop_file_path().unwrap_or(String::new());
+        }
+
         fn open_desktop_file<'a>(&self) -> InstallerResult<File> {
-            let desktop_file_path = self.config.get_desktop_file_path().unwrap_or(String::new());
+            let desktop_file_path = self.get_desktop_file_path();
 
             let f = File::create(&desktop_file_path)?;
             Ok(f)
@@ -85,6 +101,17 @@ MimeType=x-scheme-handler/org-protocol
 
             println!("Install xdg-mime to this environment...");
             self.install_mime_for_xdg();
+            Ok(())
+        }
+
+        fn uninstall(&self) -> InstallerResult<()> {
+            println!("Remove desktop file...");
+            let path = PathBuf::from(self.get_desktop_file_path());
+            let path = path.as_path();
+
+            if path.exists() {
+                remove_file(path)?
+            }
             Ok(())
         }
     }
