@@ -11,65 +11,9 @@ pub struct Config {
     pub linux_config: Option<LinuxConfig>,
 }
 
-pub fn get_app<'a, 'b>() -> App<'a, 'b> {
-    return App::new("org-roam-protocol-installer").subcommand(
-        SubCommand::with_name("linux")
-            .about("Install for linux")
-            .arg(
-                Arg::with_name("desktop-entry-directory")
-                    .short("d")
-                    .default_value("")
-                    .help("A full path of directory to save desktop entry"),
-            )
-            .arg(
-                Arg::with_name("mode")
-                    .default_value("install")
-                    .possible_values(&["install", "uninstall"])
-                    .help("A full path of directory to save desktop entry"),
-            )
-            .arg(
-                Arg::with_name("desktop-file-name")
-                    .short("f")
-                    .default_value("org-protocol.desktop")
-                    .help("Name of desktop file for org-protocol"),
-            ),
-    );
-}
-
-#[derive(Debug, PartialEq, Eq)]
-pub struct LinuxConfig {
-    pub desktop_entry_directory: PathBuf,
-    pub desktop_file_name: String,
-    pub mode: ExecutionMode,
-}
-
-impl LinuxConfig {
-    pub fn get_desktop_file_path(&self) -> Option<String> {
-        let mut buf = self.desktop_entry_directory.clone();
-        buf.push(self.desktop_file_name.clone());
-
-        if let Some(path) = buf.to_str() {
-            return Some(String::from(path));
-        } else {
-            return None;
-        }
-    }
-}
-
 impl Display for Config {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Config{{linux_config: {:?}}}", self.linux_config)
-    }
-}
-
-impl Display for LinuxConfig {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "LinuxConfig{{desktop_entry_directory: {}, desktop_file_name: {}}}",
-            self.desktop_entry_directory.to_str().unwrap(),
-            self.desktop_file_name
-        )
     }
 }
 
@@ -100,18 +44,87 @@ impl Config {
     }
 }
 
+pub fn application_definition<'a, 'b>() -> App<'a, 'b> {
+    return App::new("org-roam-protocol-installer").subcommand(
+        SubCommand::with_name("linux")
+            .about("Install for linux")
+            .arg(
+                Arg::with_name("desktop-entry-directory")
+                    .short("d")
+                    .default_value("")
+                    .help("A full path of directory to save desktop entry"),
+            )
+            .arg(
+                Arg::with_name("mode")
+                    .default_value("install")
+                    .possible_values(&["install", "uninstall"])
+                    .help("A full path of directory to save desktop entry"),
+            )
+            .arg(
+                Arg::with_name("desktop-file-name")
+                    .short("f")
+                    .default_value("org-protocol.desktop")
+                    .help("Name of desktop file for org-protocol"),
+            ),
+    );
+}
+
+// configuration for linux
+#[derive(Debug, PartialEq, Eq)]
+pub struct LinuxConfig {
+    pub desktop_entry_directory: PathBuf,
+    pub desktop_file_name: String,
+    pub mode: ExecutionMode,
+}
+
+impl LinuxConfig {
+    pub fn get_desktop_file_path(&self) -> Option<String> {
+        let mut buf = self.desktop_entry_directory.clone();
+        buf.push(self.desktop_file_name.clone());
+
+        if let Some(path) = buf.to_str() {
+            return Some(String::from(path));
+        } else {
+            return None;
+        }
+    }
+}
+
+impl Display for LinuxConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "LinuxConfig{{desktop_entry_directory: {}, desktop_file_name: {}}}",
+            self.desktop_entry_directory.to_str().unwrap(),
+            self.desktop_file_name
+        )
+    }
+}
+
+// configuration for macOS
+#[derive(Debug, PartialEq, Eq)]
+pub struct MacOSConfig {
+    pub mode: ExecutionMode,
+}
+
+impl Display for MacOSConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "MacOSConfig{{}}",)
+    }
+}
+
 mod test {
     #[cfg(test)]
     mod config {
         use std::path::PathBuf;
 
-        use crate::config::{get_app, Config, LinuxConfig};
+        use crate::config::{application_definition, Config, LinuxConfig};
 
         #[test]
         fn get_valid_config() {
             // arrange
             let args = vec![String::from(""), String::from("linux")];
-            let matches = get_app().get_matches_from(args);
+            let matches = application_definition().get_matches_from(args);
 
             // do
             let actual = Config::new(&matches);
@@ -167,7 +180,7 @@ mod test {
                 String::from("-f"),
                 String::from("file.desktop"),
             ];
-            let matches = get_app().get_matches_from(args);
+            let matches = application_definition().get_matches_from(args);
 
             // do
             let actual = Config::new(&matches);
@@ -189,7 +202,7 @@ mod test {
         fn get_error_if_invalid_os() {
             // arrange
             let args = vec![String::from("")];
-            let matches = get_app().get_matches_from(args);
+            let matches = application_definition().get_matches_from(args);
 
             // do
             let actual = Config::new(&matches);

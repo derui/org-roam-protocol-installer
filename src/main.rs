@@ -2,10 +2,10 @@ extern crate org_roam_protocol_installer;
 
 use std::process::exit;
 
-use org_roam_protocol_installer::config::{get_app, Config};
+use org_roam_protocol_installer::config::{application_definition, Config};
 
 fn main() {
-    let matches = get_app().get_matches();
+    let matches = application_definition().get_matches();
 
     match Config::new(&matches) {
         Ok(config) => {
