@@ -9,7 +9,7 @@ use crate::config::LinuxConfig;
 use super::InstallerResult;
 use super::RoamProtocolInstaller;
 
-const DESKTOP_FILE_CONTENT: &'static str = r#"
+const DESKTOP_FILE_CONTENT: &str = r#"
 [Desktop Entry]
 Name=Org-Protocol
 Exec=emacsclient %u
@@ -32,10 +32,10 @@ impl LinuxRoamProtocolInstaller {
     }
 
     fn get_desktop_file_path(&self) -> String {
-        return self.config.get_desktop_file_path().unwrap_or(String::new());
+        self.config.get_desktop_file_path().unwrap_or_default()
     }
 
-    fn open_desktop_file<'a>(&self) -> InstallerResult<File> {
+    fn open_desktop_file(&self) -> InstallerResult<File> {
         let desktop_file_path = self.get_desktop_file_path();
 
         let f = File::create(&desktop_file_path)?;
@@ -59,7 +59,7 @@ impl RoamProtocolInstaller for LinuxRoamProtocolInstaller {
         println!("Install desktop file...");
         let mut f: File = self.open_desktop_file()?;
 
-        f.write(DESKTOP_FILE_CONTENT.as_bytes())?;
+        f.write_all(DESKTOP_FILE_CONTENT.as_bytes())?;
 
         println!("Install xdg-mime to this environment...");
         self.install_mime_for_xdg();

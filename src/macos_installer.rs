@@ -1,8 +1,6 @@
 use std::io::Write;
 use std::path::Path;
-use std::path::PathBuf;
 use std::process::Command;
-use std::u8;
 
 use tempfile::NamedTempFile;
 
@@ -11,7 +9,7 @@ use crate::config::MacOSConfig;
 use super::InstallerResult;
 use super::RoamProtocolInstaller;
 
-const ORG_PROTOCOL_SCRIPT: &'static str = r#"
+const ORG_PROTOCOL_SCRIPT: &str = r#"
 on open location this_URL
     set EC to "{} --no-wait "
     set filePath to quoted form of this_URL
@@ -36,38 +34,7 @@ end tell
         path
     );
 
-    return String::from(script);
-}
-
-trait WriteTempfile {
-    fn write_tempfile(&self, buf: &[u8]) -> InstallerResult<PathBuf>;
-}
-
-struct WriteTempfileImpl {}
-impl WriteTempfile for WriteTempfileImpl {
-    fn write_tempfile(&self, buf: &[u8]) -> InstallerResult<PathBuf> {
-        let mut file = NamedTempFile::new()?;
-
-        file.write_all(buf)?;
-        file.flush()?;
-
-        Ok(file.path().to_path_buf())
-    }
-}
-
-trait ExecuteScript {
-    fn execute(&mut self, path: &PathBuf) -> InstallerResult<()>;
-}
-
-struct ExecuteScriptImpl {}
-impl ExecuteScript for ExecuteScriptImpl {
-    fn execute(&mut self, path: &PathBuf) -> InstallerResult<()> {
-        let mut child = Command::new("osascript")
-            .arg(path.as_os_str().to_str().unwrap())
-            .spawn()?;
-        child.wait()?;
-        Ok(())
-    }
+    script
 }
 
 struct MacOSRoamProtocolInstaller {
@@ -123,34 +90,7 @@ impl RoamProtocolInstaller for MacOSRoamProtocolInstaller {
 mod test {
     use std::io::{Cursor, Read, Seek, SeekFrom};
 
-    use crate::linux_installer::new;
-
     use super::*;
-
-    struct WriteTempfileStub {
-        pub path: PathBuf,
-    }
-    impl WriteTempfile for WriteTempfileStub {
-        fn write_tempfile(&self, _: &[u8]) -> InstallerResult<PathBuf> {
-            Ok(self.path.clone())
-        }
-    }
-
-    struct ExecuteScriptStub<'a> {
-        pub buf: &'a mut PathBuf,
-    }
-    impl ExecuteScriptStub<'_> {
-        fn update_buf(&mut self, path: &PathBuf) {
-            self.buf.clear();
-            self.buf.push(path);
-        }
-    }
-    impl ExecuteScript for ExecuteScriptStub<'_> {
-        fn execute(&mut self, path: &PathBuf) -> InstallerResult<()> {
-            self.update_buf(path);
-            Ok(())
-        }
-    }
 
     #[test]
     fn write_protocol_script() {

@@ -6,11 +6,11 @@ pub enum ExecutionMode {
 
 impl ExecutionMode {
     pub fn from(str: &str) -> Option<ExecutionMode> {
-        return match str {
+        match str {
             "install" => Some(ExecutionMode::Install),
             "uninstall" => Some(ExecutionMode::Uninstall),
             _ => None,
-        };
+        }
     }
 }
 

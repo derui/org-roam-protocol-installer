@@ -19,10 +19,10 @@ impl Display for Config {
 
 impl Config {
     pub fn new(matches: &ArgMatches) -> Result<Config, &'static str> {
-        return if let Some(matches) = matches.subcommand_matches("linux") {
+        if let Some(matches) = matches.subcommand_matches("linux") {
             let mut home = home_dir().unwrap();
             let desktop_entry_dir = match matches.value_of("desktop-entry-directory") {
-                Some(str) if str.len() > 0 => PathBuf::from(str),
+                Some(str) if !str.is_empty() => PathBuf::from(str),
                 Some(_) | None => {
                     home.push(".local/share/applications");
                     home
@@ -40,12 +40,12 @@ impl Config {
             })
         } else {
             Err("Can not detect OS type")
-        };
+        }
     }
 }
 
 pub fn application_definition<'a, 'b>() -> App<'a, 'b> {
-    return App::new("org-roam-protocol-installer").subcommand(
+    App::new("org-roam-protocol-installer").subcommand(
         SubCommand::with_name("linux")
             .about("Install for linux")
             .arg(
@@ -66,7 +66,7 @@ pub fn application_definition<'a, 'b>() -> App<'a, 'b> {
                     .default_value("org-protocol.desktop")
                     .help("Name of desktop file for org-protocol"),
             ),
-    );
+    )
 }
 
 // configuration for linux
@@ -82,11 +82,7 @@ impl LinuxConfig {
         let mut buf = self.desktop_entry_directory.clone();
         buf.push(self.desktop_file_name.clone());
 
-        if let Some(path) = buf.to_str() {
-            return Some(String::from(path));
-        } else {
-            return None;
-        }
+        buf.to_str().map(String::from)
     }
 }
 
