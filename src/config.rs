@@ -7,8 +7,17 @@ use dirs::home_dir;
 use crate::execution_mode::ExecutionMode;
 
 #[derive(Debug, PartialEq, Eq)]
+pub enum InstallTarget {
+    Linux,
+    MacOS,
+}
+
+#[derive(Debug, PartialEq, Eq)]
 pub struct Config {
+    pub target: InstallTarget,
+    pub mode: ExecutionMode,
     pub linux_config: Option<LinuxConfig>,
+    pub macos_config: Option<MacOSConfig>,
 }
 
 impl Display for Config {
@@ -32,11 +41,23 @@ impl Config {
                 .unwrap_or(ExecutionMode::Install);
 
             Ok(Config {
+                target: InstallTarget::Linux,
+                mode,
                 linux_config: Some(LinuxConfig {
-                    mode,
                     desktop_entry_directory: desktop_entry_dir,
                     desktop_file_name: String::from(matches.value_of("desktop-file-name").unwrap()),
                 }),
+                macos_config: None,
+            })
+        } else if let Some(matches) = matches.subcommand_matches("macos") {
+            let mode = ExecutionMode::from(matches.value_of("mode").unwrap())
+                .unwrap_or(ExecutionMode::Install);
+
+            Ok(Config {
+                target: InstallTarget::MacOS,
+                mode,
+                linux_config: None,
+                macos_config: Some(MacOSConfig {}),
             })
         } else {
             Err("Can not detect OS type")
@@ -74,7 +95,6 @@ pub fn application_definition<'a, 'b>() -> App<'a, 'b> {
 pub struct LinuxConfig {
     pub desktop_entry_directory: PathBuf,
     pub desktop_file_name: String,
-    pub mode: ExecutionMode,
 }
 
 impl LinuxConfig {
@@ -99,9 +119,7 @@ impl Display for LinuxConfig {
 
 // configuration for macOS
 #[derive(Debug, PartialEq, Eq)]
-pub struct MacOSConfig {
-    pub mode: ExecutionMode,
-}
+pub struct MacOSConfig {}
 
 impl Display for MacOSConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -132,11 +150,13 @@ mod test {
             assert_eq!(
                 actual,
                 Ok(Config {
+                    target: crate::config::InstallTarget::Linux,
+                    mode: crate::execution_mode::ExecutionMode::Install,
                     linux_config: Some(LinuxConfig {
-                        mode: crate::execution_mode::ExecutionMode::Install,
                         desktop_entry_directory: home,
                         desktop_file_name: String::from("org-protocol.desktop")
-                    })
+                    }),
+                    macos_config: None
                 })
             )
         }
@@ -150,7 +170,6 @@ mod test {
             fn get_desktop_file() {
                 // arrange
                 let config = LinuxConfig {
-                    mode: crate::execution_mode::ExecutionMode::Install,
                     desktop_entry_directory: PathBuf::from("directory"),
                     desktop_file_name: String::from("file.desktop"),
                 };
@@ -185,11 +204,13 @@ mod test {
             assert_eq!(
                 actual,
                 Ok(Config {
+                    target: crate::config::InstallTarget::Linux,
+                    mode: crate::execution_mode::ExecutionMode::Install,
                     linux_config: Some(LinuxConfig {
-                        mode: crate::execution_mode::ExecutionMode::Install,
                         desktop_entry_directory: PathBuf::from("directory"),
                         desktop_file_name: String::from("file.desktop")
-                    })
+                    }),
+                    macos_config: None
                 })
             )
         }

@@ -10,3 +10,4 @@ authors = ["derui <derutakayu@gmail.com>"]
 clap = "~2.27.0"
 dirs = "~3.0.2"
 tempfile = "~3.2.0"
+quick-xml = "~0.22.0"
