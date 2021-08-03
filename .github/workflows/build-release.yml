@@ -6,11 +6,11 @@ on:
 jobs:
   build-for-linux:
     runs-on: ubuntu-latest
-    container:
-      image: joseluisq/rust-linux-darwin-builder:1.54.0
     steps:
       - name: Check out repository code
         uses: actions/checkout@v2
+      - name: Install musl target
+        run: rustup target add x86_64-unknown-linux-musl
       - name: Build for linux
         run: cargo build --release --target x86_64-unknown-linux-musl
       - run: tar -czvf org-roam-protocol-installer-x86_64-unknown-linux.tar.gz -C target/x86_64-unknown-linux-musl/release org-roam-protocol-installer
