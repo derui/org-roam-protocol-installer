@@ -66,28 +66,39 @@ impl Config {
 }
 
 pub fn application_definition<'a, 'b>() -> App<'a, 'b> {
-    App::new("org-roam-protocol-installer").subcommand(
-        SubCommand::with_name("linux")
-            .about("Install for linux")
-            .arg(
-                Arg::with_name("desktop-entry-directory")
-                    .short("d")
-                    .default_value("")
-                    .help("A full path of directory to save desktop entry"),
-            )
-            .arg(
-                Arg::with_name("mode")
-                    .default_value("install")
-                    .possible_values(&["install", "uninstall"])
-                    .help("A full path of directory to save desktop entry"),
-            )
-            .arg(
-                Arg::with_name("desktop-file-name")
-                    .short("f")
-                    .default_value("org-protocol.desktop")
-                    .help("Name of desktop file for org-protocol"),
-            ),
-    )
+    App::new("org-roam-protocol-installer")
+        .subcommand(
+            SubCommand::with_name("linux")
+                .about("Install for linux")
+                .arg(
+                    Arg::with_name("desktop-entry-directory")
+                        .short("d")
+                        .default_value("")
+                        .help("A full path of directory to save desktop entry"),
+                )
+                .arg(
+                    Arg::with_name("mode")
+                        .default_value("install")
+                        .possible_values(&["install", "uninstall"])
+                        .help("A full path of directory to save desktop entry"),
+                )
+                .arg(
+                    Arg::with_name("desktop-file-name")
+                        .short("f")
+                        .default_value("org-protocol.desktop")
+                        .help("Name of desktop file for org-protocol"),
+                ),
+        )
+        .subcommand(
+            SubCommand::with_name("macos")
+                .about("Install for macOS")
+                .arg(
+                    Arg::with_name("mode")
+                        .default_value("install")
+                        .possible_values(&["install", "uninstall"])
+                        .help("A full path of directory to save desktop entry"),
+                ),
+        )
 }
 
 // configuration for linux
