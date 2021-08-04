@@ -35,6 +35,7 @@ jobs:
       - name: Build for macOS
         run: cargo build --release --target x86_64-apple-darwin
       - run: codesign --force -s - target/x86_64-apple-darwin/release/org-roam-protocol-installer
+      - run: xattr -d -r com.apple.quarantine target/x86_64-apple-darwin/release/org-roam-protocol-installer
       - run: tar -czvf org-roam-protocol-installer-x86_64-apple-darwin.tar.gz -C target/x86_64-apple-darwin/release org-roam-protocol-installer
 
       - name: Upload Release macos
