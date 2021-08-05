@@ -11,6 +11,7 @@ use quick_xml::events::BytesEnd;
 use quick_xml::events::Event;
 use quick_xml::Reader;
 use quick_xml::Writer;
+use tempfile::Builder;
 use tempfile::NamedTempFile;
 
 use crate::config::MacOSConfig;
@@ -153,9 +154,19 @@ impl MacOSRoamProtocolInstaller {
 impl RoamProtocolInstaller for MacOSRoamProtocolInstaller {
     fn install(&mut self) -> InstallerResult<()> {
         println!("Building client application via Script Editor...");
-        let mut script_temp_file = NamedTempFile::new()?;
+        let mut script_temp_file = Builder::new()
+            .prefix("org-protocol-script")
+            .suffix(".scpt")
+            .rand_bytes(8)
+            .tempfile()?;
         self.write_protocol_script(script_temp_file.as_file_mut())?;
-        let mut application_temp_file = NamedTempFile::new()?;
+
+        let mut application_temp_file = Builder::new()
+            .prefix("org-protocol-installer")
+            .suffix(".scpt")
+            .rand_bytes(8)
+            .tempfile()?;
+
         self.write_application_script(
             application_temp_file.as_file_mut(),
             script_temp_file.path(),
