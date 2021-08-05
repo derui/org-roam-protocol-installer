@@ -53,11 +53,18 @@ impl Config {
             let mode = ExecutionMode::from(matches.value_of("mode").unwrap())
                 .unwrap_or(ExecutionMode::Install);
 
+            let emacsclient_path = matches.value_of("emacsclient-path").unwrap_or("");
+            if emacsclient_path.is_empty() {
+                return Err("Need emacsclient-path");
+            }
+
             Ok(Config {
                 target: InstallTarget::MacOS,
                 mode,
                 linux_config: None,
-                macos_config: Some(MacOSConfig {}),
+                macos_config: Some(MacOSConfig {
+                    emacsclient_path: PathBuf::from(emacsclient_path),
+                }),
             })
         } else {
             Err("Can not detect OS type")
@@ -80,7 +87,7 @@ pub fn application_definition<'a, 'b>() -> App<'a, 'b> {
                     Arg::with_name("mode")
                         .default_value("install")
                         .possible_values(&["install", "uninstall"])
-                        .help("A full path of directory to save desktop entry"),
+                        .help("execute mode"),
                 )
                 .arg(
                     Arg::with_name("desktop-file-name")
@@ -97,6 +104,13 @@ pub fn application_definition<'a, 'b>() -> App<'a, 'b> {
                         .default_value("install")
                         .possible_values(&["install", "uninstall"])
                         .help("A full path of directory to save desktop entry"),
+                )
+                .arg(
+                    Arg::with_name("emacsclient-path")
+                        .long("emacsclient-path")
+                        .value_name("PATH")
+                        .required(true)
+                        .help("Full path of emacsclient in this machine"),
                 ),
         )
 }
@@ -130,7 +144,9 @@ impl Display for LinuxConfig {
 
 // configuration for macOS
 #[derive(Debug, PartialEq, Eq)]
-pub struct MacOSConfig {}
+pub struct MacOSConfig {
+    pub emacsclient_path: PathBuf,
+}
 
 impl Display for MacOSConfig {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

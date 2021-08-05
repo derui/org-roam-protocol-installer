@@ -18,14 +18,21 @@ use crate::config::MacOSConfig;
 use super::InstallerResult;
 use super::RoamProtocolInstaller;
 
-const ORG_PROTOCOL_SCRIPT: &str = r#"
+fn make_org_protocol_script(path: &Path) -> String {
+    let script = format!(
+        r#"
 on open location this_URL
     set EC to "{} --no-wait "
     set filePath to quoted form of this_URL
     do shell script EC & filePath
     tell application "Emacs" to activate
 end open location
-"#;
+"#,
+        path.to_str().unwrap()
+    );
+
+    script
+}
 
 const PLIST_ELEMENTS: &str = r#"<key>CFBundleURLTypes</key>
 <array>
@@ -69,7 +76,8 @@ impl MacOSRoamProtocolInstaller {
     }
 
     fn write_protocol_script(&self, writer: &mut dyn Write) -> InstallerResult<()> {
-        writer.write_all(ORG_PROTOCOL_SCRIPT.as_bytes())?;
+        let script = make_org_protocol_script(self.config.emacsclient_path.as_path());
+        writer.write_all(script.as_bytes())?;
 
         Ok(())
     }
@@ -176,14 +184,19 @@ impl RoamProtocolInstaller for MacOSRoamProtocolInstaller {
 
 #[cfg(test)]
 mod test {
-    use std::io::{Cursor, Read, Seek, SeekFrom};
+    use std::{
+        io::{Cursor, Read, Seek, SeekFrom},
+        path::PathBuf,
+    };
 
     use super::*;
 
     #[test]
     fn write_protocol_script() {
         // arrange
-        let installer = MacOSRoamProtocolInstaller::new(MacOSConfig {});
+        let installer = MacOSRoamProtocolInstaller::new(MacOSConfig {
+            emacsclient_path: PathBuf::from("foo"),
+        });
 
         // do
         let mut cursor = Cursor::new(Vec::new());
@@ -193,13 +206,15 @@ mod test {
         let mut buf = String::new();
         cursor.seek(SeekFrom::Start(0)).unwrap();
         cursor.read_to_string(&mut buf).unwrap();
-        assert_eq!(buf, ORG_PROTOCOL_SCRIPT)
+        assert_eq!(buf, make_org_protocol_script(Path::new("foo")))
     }
 
     #[test]
     fn write_application_script() {
         // arrange
-        let installer = MacOSRoamProtocolInstaller::new(MacOSConfig {});
+        let installer = MacOSRoamProtocolInstaller::new(MacOSConfig {
+            emacsclient_path: PathBuf::from("foo"),
+        });
 
         // do
         let mut cursor = Cursor::new(Vec::new());
@@ -216,7 +231,9 @@ mod test {
     #[test]
     fn launch_app() {
         // arrange
-        let installer = MacOSRoamProtocolInstaller::new(MacOSConfig {});
+        let installer = MacOSRoamProtocolInstaller::new(MacOSConfig {
+            emacsclient_path: PathBuf::from("foo"),
+        });
 
         // do
         let path = Path::new("ls");
@@ -229,7 +246,9 @@ mod test {
     #[test]
     fn write_url_association_into_plist() {
         // arrange
-        let installer = MacOSRoamProtocolInstaller::new(MacOSConfig {});
+        let installer = MacOSRoamProtocolInstaller::new(MacOSConfig {
+            emacsclient_path: PathBuf::from("foo"),
+        });
         let mut reader = BufReader::new(Cursor::new(Vec::from(
             r#"<?xml version="1.0" encoding="utf-8"?><plist version="1.0"><dict></dict></plist>"#
                 .as_bytes(),
@@ -251,5 +270,17 @@ mod test {
         );
         assert_eq!(ret.unwrap(), ());
         assert_eq!(String::from_utf8(vec).unwrap().replace("\n", ""), expect);
+    }
+
+    #[test]
+    fn contains_emacsclient_path() {
+        // arrange
+        let path = Path::new("foo/bar");
+
+        // do
+        let ret = make_org_protocol_script(path);
+
+        // verify
+        assert_eq!(ret.contains("foo/bar"), true)
     }
 }
