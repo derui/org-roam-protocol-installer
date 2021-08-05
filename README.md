@@ -5,7 +5,13 @@ The deadly simple program to install org-protocol for [org-roam](https://www.org
 
 ```shell
 # install for linux
-$ org-roam-protocol-install linux
+$ org-roam-protocol-install linux install
+
+# uninstall configuration for linux
+$ org-roam-protocol-install linux uninstall
+
+# install for linux
+$ org-roam-protocol-install macos install --emacsclient-path <full path of emacsclient path>
 ```
 
 # Contribute #
