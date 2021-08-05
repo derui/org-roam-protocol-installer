@@ -12,7 +12,6 @@ use quick_xml::events::Event;
 use quick_xml::Reader;
 use quick_xml::Writer;
 use tempfile::Builder;
-use tempfile::NamedTempFile;
 
 use crate::config::MacOSConfig;
 
