@@ -54,12 +54,12 @@ pub fn new(config: MacOSConfig) -> Box<dyn RoamProtocolInstaller> {
 fn make_application_making_script(path: &Path) -> String {
     let path = path.to_str().unwrap();
     let script = format!(
-        "tell application \"Script Editor\"
+        r#"tell application "Script Editor"
   set file to open {}
-  tell file to save as \"application\" in \"/Application/OrgProtocolClient.app\"
+  tell file to save as "application" in "/Application/OrgProtocolClient.app"
   quit
 end tell
-",
+"#,
         path
     );
 
