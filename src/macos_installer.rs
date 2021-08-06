@@ -145,19 +145,19 @@ impl RoamProtocolInstaller for MacOSRoamProtocolInstaller {
         self.compile_client_script(script_temp_file.path())?;
 
         println!("Editing plist to associate URL to application...");
-        let path = Path::new("/Application/OrgProtocolClient.app/Contents/Info.plist");
+        let path = Path::new("/Applications/OrgProtocolClient.app/Contents/Info.plist");
         let file = File::open(path.clone())?;
         let mut reader = BufReader::new(file);
         let mut target_file = File::open(path.clone())?;
         self.update_plist(&mut reader, &mut target_file)?;
 
         println!("Associating URL to application...");
-        let path = Path::new("/Application/OrgProtocolClient.app");
+        let path = Path::new("/Applications/OrgProtocolClient.app");
         self.install_protocol(&path)
     }
 
     fn uninstall(&mut self) -> InstallerResult<()> {
-        let path = Path::new("/Application/OrgProtocolClient.app");
+        let path = Path::new("/Applications/OrgProtocolClient.app");
         if path.exists() {
             remove_file(&path)?;
         }
