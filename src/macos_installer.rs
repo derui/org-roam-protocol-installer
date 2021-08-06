@@ -57,7 +57,7 @@ fn make_application_making_script(path: &Path) -> String {
         r#"
 tell application "Script Editor"
   open "{}"
-  save as "application" in "/Application/OrgProtocolClient.app"
+  save as "application" in "/Applications/OrgProtocolClient.app"
   quit
 end tell
 "#,
