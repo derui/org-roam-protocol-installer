@@ -13,7 +13,7 @@ jobs:
         run: rustup target add x86_64-unknown-linux-musl
       - name: Build for linux
         run: cargo build --release --target x86_64-unknown-linux-musl
-      - run: tar -czvf org-roam-protocol-installer-x86_64-unknown-linux.tar.gz -C target/x86_64-unknown-linux-musl/release org-roam-protocol-installer
+      - run: zip org-roam-protocol-installer-x86_64-unknown-linux.zip target/x86_64-unknown-linux-musl/release org-roam-protocol-installer
 
       - name: Upload Release linux
         id: upload-release-asset-linux
@@ -23,8 +23,8 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
         # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: org-roam-protocol-installer-x86_64-unknown-linux.tar.gz
-          asset_name: org-roam-protocol-installer-x86_64-unknown-linux.tar.gz
+          asset_path: org-roam-protocol-installer-x86_64-unknown-linux.zip
+          asset_name: org-roam-protocol-installer-x86_64-unknown-linux.zip
           asset_content_type: application/tar+gzip
 
   build-for-macos:
@@ -36,7 +36,7 @@ jobs:
         run: cargo build --release --target x86_64-apple-darwin
       - run: codesign --force -s - target/x86_64-apple-darwin/release/org-roam-protocol-installer
       - run: xattr -d -r com.apple.quarantine target/x86_64-apple-darwin/release/org-roam-protocol-installer
-      - run: tar --xattrs -czvf org-roam-protocol-installer-x86_64-apple-darwin.tar.gz -C target/x86_64-apple-darwin/release org-roam-protocol-installer
+      - run: zip org-roam-protocol-installer-x86_64-apple-darwin.zip target/x86_64-apple-darwin/release org-roam-protocol-installer
 
       - name: Upload Release macos
         id: upload-release-asset-macos
@@ -46,6 +46,6 @@ jobs:
         with:
           upload_url: ${{ github.event.release.upload_url }}
         # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
-          asset_path: org-roam-protocol-installer-x86_64-apple-darwin.tar.gz
-          asset_name: org-roam-protocol-installer-x86_64-apple-darwin.tar.gz
+          asset_path: org-roam-protocol-installer-x86_64-apple-darwin.zip
+          asset_name: org-roam-protocol-installer-x86_64-apple-darwin.zip
           asset_content_type: application/tar+gzip
