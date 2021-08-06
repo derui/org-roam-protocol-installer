@@ -83,18 +83,18 @@ impl MacOSRoamProtocolInstaller {
         Ok(())
     }
 
-    fn write_application_script(&self, writer: &mut dyn Write, path: &Path) -> InstallerResult<()> {
-        let script = make_application_making_script(path);
-        writer.write_all(script.as_bytes())?;
-
-        Ok(())
-    }
-
-    fn execute_osascript(&self, path: &Path) -> InstallerResult<()> {
-        let mut child = Command::new("osascript")
-            .arg(path.as_os_str().to_str().unwrap())
+    fn compile_client_script(&self, path: &Path) -> InstallerResult<()> {
+        let mut child = Command::new("osacompile")
+            .args(&[
+                "-t",
+                "application",
+                "-o",
+                "/Applications/OrgProtocolClient.app",
+                path.to_str().unwrap(),
+            ])
             .spawn()?;
         child.wait()?;
+
         Ok(())
     }
 
@@ -160,17 +160,7 @@ impl RoamProtocolInstaller for MacOSRoamProtocolInstaller {
             .tempfile()?;
         self.write_protocol_script(script_temp_file.as_file_mut())?;
 
-        let mut application_temp_file = Builder::new()
-            .prefix("org-protocol-installer")
-            .suffix(".scpt")
-            .rand_bytes(8)
-            .tempfile()?;
-
-        self.write_application_script(
-            application_temp_file.as_file_mut(),
-            script_temp_file.path(),
-        )?;
-        self.execute_osascript(application_temp_file.path())?;
+        self.compile_client_script(script_temp_file.path())?;
 
         println!("Editing plist to associate URL to application...");
         let path = Path::new("/Application/OrgProtocolClient.app/Contents/Info.plist");
@@ -218,25 +208,6 @@ mod test {
         cursor.seek(SeekFrom::Start(0)).unwrap();
         cursor.read_to_string(&mut buf).unwrap();
         assert_eq!(buf, make_org_protocol_script(Path::new("foo")))
-    }
-
-    #[test]
-    fn write_application_script() {
-        // arrange
-        let installer = MacOSRoamProtocolInstaller::new(MacOSConfig {
-            emacsclient_path: PathBuf::from("foo"),
-        });
-
-        // do
-        let mut cursor = Cursor::new(Vec::new());
-        let path = Path::new("/test");
-        let _ = installer.write_application_script(&mut cursor, &path);
-
-        // verify
-        let mut buf = String::new();
-        cursor.seek(SeekFrom::Start(0)).unwrap();
-        cursor.read_to_string(&mut buf).unwrap();
-        assert_eq!(buf, make_application_making_script(&path))
     }
 
     #[test]
