@@ -51,22 +51,6 @@ pub fn new(config: MacOSConfig) -> Box<dyn RoamProtocolInstaller> {
     Box::new(MacOSRoamProtocolInstaller::new(config))
 }
 
-fn make_application_making_script(path: &Path) -> String {
-    let path = path.to_str().unwrap();
-    let script = format!(
-        r#"
-tell application "Script Editor"
-  open "{}"
-  save as "application" in "/Applications/OrgProtocolClient.app"
-  quit
-end tell
-"#,
-        path
-    );
-
-    script
-}
-
 struct MacOSRoamProtocolInstaller {
     config: MacOSConfig,
 }
@@ -86,8 +70,6 @@ impl MacOSRoamProtocolInstaller {
     fn compile_client_script(&self, path: &Path) -> InstallerResult<()> {
         let mut child = Command::new("osacompile")
             .args(&[
-                "-t",
-                "application",
                 "-o",
                 "/Applications/OrgProtocolClient.app",
                 path.to_str().unwrap(),
