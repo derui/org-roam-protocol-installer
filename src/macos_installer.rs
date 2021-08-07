@@ -147,7 +147,7 @@ impl RoamProtocolInstaller for MacOSRoamProtocolInstaller {
             let mut reader = BufReader::new(file);
             buf = self.rewrite_plist(&mut reader)?;
         };
-        let mut file = File::open(path)?;
+        let mut file = File::create(path)?;
         file.write_all(&buf)?;
 
         println!("Associating URL to application...");
