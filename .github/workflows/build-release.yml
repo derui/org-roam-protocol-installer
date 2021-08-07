@@ -13,7 +13,7 @@ jobs:
         run: rustup target add x86_64-unknown-linux-musl
       - name: Build for linux
         run: cargo build --release --target x86_64-unknown-linux-musl
-      - run: mv target/x86_64-apple-darwin/release/org-roam-protocol-installer .
+      - run: mv target/x86_64-unknown-linux-musl/release/org-roam-protocol-installer .
       - run: zip org-roam-protocol-installer-x86_64-unknown-linux.zip org-roam-protocol-installer
 
       - name: Upload Release linux
