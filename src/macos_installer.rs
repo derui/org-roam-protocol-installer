@@ -80,13 +80,6 @@ impl MacOSRoamProtocolInstaller {
         Ok(())
     }
 
-    /// install org-protocol via created app from AppleScript. Run App located at `path`, and wait to finish it.
-    fn install_protocol(&self, path: &Path) -> InstallerResult<()> {
-        let mut child = Command::new(path).spawn()?;
-        child.wait()?;
-        Ok(())
-    }
-
     fn rewrite_plist(&self, original: &mut dyn BufRead) -> InstallerResult<Vec<u8>> {
         let mut reader = Reader::from_reader(original);
         let mut writer = Writer::new(Cursor::new(Vec::new()));
@@ -150,9 +143,9 @@ impl RoamProtocolInstaller for MacOSRoamProtocolInstaller {
         let mut file = File::create(path)?;
         file.write_all(&buf)?;
 
-        println!("Associating URL to application...");
-        let path = Path::new("/Applications/OrgProtocolClient.app");
-        self.install_protocol(&path)
+        println!("Need associating URL to created application.");
+        println!("Please run application located /Applications/OrgRoamProtocol.app by hand.");
+        Ok(())
     }
 
     fn uninstall(&mut self) -> InstallerResult<()> {
@@ -189,21 +182,6 @@ mod test {
         cursor.seek(SeekFrom::Start(0)).unwrap();
         cursor.read_to_string(&mut buf).unwrap();
         assert_eq!(buf, make_org_protocol_script(Path::new("foo")))
-    }
-
-    #[test]
-    fn launch_app() {
-        // arrange
-        let installer = MacOSRoamProtocolInstaller::new(MacOSConfig {
-            emacsclient_path: PathBuf::from("foo"),
-        });
-
-        // do
-        let path = Path::new("ls");
-        let ret = installer.install_protocol(&path);
-
-        // verify
-        assert_eq!(ret.unwrap(), ())
     }
 
     #[test]
