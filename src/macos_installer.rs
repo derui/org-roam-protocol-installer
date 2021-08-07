@@ -87,11 +87,7 @@ impl MacOSRoamProtocolInstaller {
         Ok(())
     }
 
-    fn update_plist(
-        &self,
-        original: &mut dyn BufRead,
-        target: &mut dyn Write,
-    ) -> InstallerResult<()> {
+    fn rewrite_plist(&self, original: &mut dyn BufRead) -> InstallerResult<Vec<u8>> {
         let mut reader = Reader::from_reader(original);
         let mut writer = Writer::new(Cursor::new(Vec::new()));
         let mut buf = Vec::new();
@@ -109,8 +105,7 @@ impl MacOSRoamProtocolInstaller {
             buf.clear();
         }
 
-        target.write_all(&writer.into_inner().into_inner())?;
-        Ok(())
+        Ok(writer.into_inner().into_inner())
     }
 
     fn write_url_association_info<W>(&self, writer: &mut Writer<W>) -> InstallerResult<()>
@@ -146,10 +141,14 @@ impl RoamProtocolInstaller for MacOSRoamProtocolInstaller {
 
         println!("Editing plist to associate URL to application...");
         let path = Path::new("/Applications/OrgProtocolClient.app/Contents/Info.plist");
-        let file = File::open(path.clone())?;
-        let mut reader = BufReader::new(file);
-        let mut target_file = File::open(path.clone())?;
-        self.update_plist(&mut reader, &mut target_file)?;
+        let buf;
+        {
+            let file = File::open(path)?;
+            let mut reader = BufReader::new(file);
+            buf = self.rewrite_plist(&mut reader)?;
+        };
+        let mut file = File::open(path)?;
+        file.write_all(&buf)?;
 
         println!("Associating URL to application...");
         let path = Path::new("/Applications/OrgProtocolClient.app");
@@ -217,13 +216,11 @@ mod test {
             r#"<?xml version="1.0" encoding="utf-8"?><plist version="1.0"><dict></dict></plist>"#
                 .as_bytes(),
         )));
-        let mut writer = Cursor::new(Vec::new());
 
         // do
-        let ret = installer.update_plist(&mut reader, &mut writer);
+        let vec = installer.rewrite_plist(&mut reader);
 
         // verify
-        let vec = writer.into_inner();
         let plist_element = String::from(PLIST_ELEMENTS)
             .lines()
             .collect::<Vec<_>>()
@@ -232,8 +229,10 @@ mod test {
             r#"<?xml version="1.0" encoding="utf-8"?><plist version="1.0"><dict>{}</dict></plist>"#,
             plist_element
         );
-        assert_eq!(ret.unwrap(), ());
-        assert_eq!(String::from_utf8(vec).unwrap().replace("\n", ""), expect);
+        assert_eq!(
+            String::from_utf8(vec.unwrap()).unwrap().replace("\n", ""),
+            expect
+        );
     }
 
     #[test]

@@ -9,7 +9,10 @@ fn main() {
 
     match Config::new(&matches) {
         Ok(config) => {
-            org_roam_protocol_installer::run(config).unwrap();
+            if let Err(e) = org_roam_protocol_installer::run(config) {
+                eprint!("Error occurred: {}", e);
+                exit(1);
+            }
         }
         Err(e) => {
             eprint!("Error occurred: {}", e);
