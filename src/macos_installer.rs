@@ -1,5 +1,6 @@
 use std::fs::remove_file;
 use std::fs::File;
+use std::io;
 use std::io::BufRead;
 use std::io::BufReader;
 use std::io::Cursor;
@@ -150,10 +151,12 @@ impl RoamProtocolInstaller for MacOSRoamProtocolInstaller {
 
     fn uninstall(&mut self) -> InstallerResult<()> {
         let path = Path::new("/Applications/OrgProtocolClient.app");
-        if path.exists() {
-            remove_file(&path)?;
+
+        match remove_file(&path) {
+            Ok(_) => Ok(()),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
+            Err(e) => Err(Box::new(e)),
         }
-        Ok(())
     }
 }
 

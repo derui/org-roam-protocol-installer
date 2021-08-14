@@ -1,5 +1,6 @@
 use std::fs::remove_file;
 use std::fs::File;
+use std::io;
 use std::io::Write;
 use std::path::PathBuf;
 use std::process;
@@ -71,9 +72,10 @@ impl RoamProtocolInstaller for LinuxRoamProtocolInstaller {
         let path = PathBuf::from(self.get_desktop_file_path());
         let path = path.as_path();
 
-        if path.exists() {
-            remove_file(path)?
+        match remove_file(&path) {
+            Ok(_) => Ok(()),
+            Err(e) if e.kind() == io::ErrorKind::NotFound => Ok(()),
+            Err(e) => Err(Box::new(e)),
         }
-        Ok(())
     }
 }
